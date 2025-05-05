@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Amazon Product Hunting</title>
+    <!-- Note: Tailwind CDN is used for development. For production, install Tailwind locally: https://tailwindcss.com/docs/installation -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/heroicons@2.1.1/dist/heroicons.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
+</head>
+<body class="bg-gray-100 min-h-screen flex flex-col font-sans">
+    <!-- Navbar -->
+    <nav class="bg-blue-800 text-white p-4 sticky top-0 z-20 shadow-lg">
+        <div class="max-w-7xl mx-auto flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <svg class="w-8 h-8" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h18M3 21h18M12 12l-9 6m9-6l9 6m-9-6V3" />
+                </svg>
+                <a href="#landingSection" onclick="goToLanding()" class="text-xl md:text-2xl font-bold">Amazon Product Hunting</a>
+            </div>
+            <div class="hidden md:flex space-x-4">
+                <a href="#about" class="hover:text-blue-200 transition">About</a>
+            </div>
+            <button id="menuToggle" class="md:hidden focus:outline-none">
+                <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7" />
+                </svg>
+            </button>
+        </div>
+        <div id="mobileMenu" class="hidden md:hidden bg-blue-700 p-4">
+            <a href="#about" class="block py-2 hover:text-blue-200 transition">About</a>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="flex-grow max-w-7xl mx-auto w-full px-4 sm:px-6 pb-8">
+        <!-- Landing Page -->
+        <section id="landingSection" class="py-16 text-center bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-lg shadow-xl mt-6 animate__animated animate__fadeIn">
+            <h1 class="text-4xl sm:text-5xl font-bold">Welcome to Amazon Product Hunting</h1>
+            <p class="mt-6 text-lg sm:text-xl max-w-3xl mx-auto">
+                Explore a vast selection of Amazon products with powerful search, sorting, and filtering tools. Find the perfect item at the best price in just a few clicks.
+            </p>
+            <button id="startSearching" class="mt-8 bg-white text-blue-600 py-3 px-8 rounded-lg font-semibold hover:bg-gray-100 transition shadow-md">
+                Start Searching
+            </button>
+        </section>
+
+        <!-- Product Section (Hidden Initially) -->
+        <section id="productSection" class="hidden mt-8">
+            <!-- Search and Filters -->
+            <div class="bg-white p-6 rounded-lg shadow-md animate__animated animate__fadeIn">
+                <div class="relative flex items-center mb-6">
+                    <svg class="w-6 h-6 text-gray-400 absolute left-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                    <input
+                        type="text"
+                        id="searchInput"
+                        placeholder="Search products by title..."
+                        class="w-full pl-12 pr-12 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-700 shadow-sm"
+                    />
+                    <button id="clearSearch" class="absolute right-4 text-gray-400 hover:text-gray-600 hidden">
+                        <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+                <div class="flex flex-col sm:flex-row gap-4">
+                    <select id="sortSelect" class="p-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="none">Sort: Default</option>
+                        <option value="price-asc">Price: Low to High</option>
+                        <option value="price-desc">Price: High to Low</option>
+                        <option value="rating-desc">Rating: High to Low</option>
+                    </select>
+                    <select id="availabilityFilter" class="p-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="all">Availability: All</option>
+                        <option value="in-stock">In Stock</option>
+                        <option value="out-of-stock">Out of Stock</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Loading Spinner -->
+            <div id="loadingSpinner" class="hidden text-center my-8">
+                <svg class="animate-spin h-10 w-10 text-blue-500 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8h8a8 8 0 01-8 8 8 8 0 01-8-8z"></path>
+                </svg>
+            </div>
+
+            <!-- Product Grid -->
+            <div id="productContainer" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 mt-8">
+                <!-- Skeleton Loader -->
+                <div class="bg-white rounded-lg shadow-md p-4 animate-pulse hidden skeleton" data-skeleton>
+                    <div class="w-full h-48 bg-gray-200 rounded"></div>
+                    <div class="mt-4 h-6 bg-gray-200 rounded w-3/4"></div>
+                    <div class="mt-2 h-4 bg-gray-200 rounded w-1/2"></div>
+                    <div class="mt-2 h-4 bg-gray-200 rounded w-1/3"></div>
+                    <div class="mt-2 h-4 bg-gray-200 rounded w-1/4"></div>
+                </div>
+            </div>
+
+            
+            
+
+            <!-- Pagination -->
+            <div id="pagination" class="mt-8 flex justify-center space-x-2"></div>
+        </section>
+
+        <section id="productDetailSection" class="hidden px-4 py-6">
+            <button id="backToResults" class="mb-4 bg-gray-200 text-gray-700 px-4 py-2 rounded hover:bg-gray-300">
+              ← Back to Results
+            </button>
+            <div id="productDetailContent" class="max-w-4xl mx-auto bg-white p-6 rounded shadow">
+              <!-- Product detail content will be injected here -->
+            </div>
+          </section>
+
+        <!-- About Section -->
+        <section id="about" class="mt-12 py-12 text-center bg-gray-50 rounded-lg animate__animated animate__fadeIn">
+            <h2 class="text-2xl sm:text-3xl font-bold text-gray-800">About Amazon Product Hunting</h2>
+            <p class="mt-4 text-lg text-gray-600 max-w-3xl mx-auto">
+                Our app simplifies your shopping experience by offering powerful tools to search, sort, and filter Amazon products. Discover the best deals and find exactly what you need with ease.
+            </p>
+        </section>
+        
+          
+    </main>
+
+    <!-- Back to Top Button -->
+    <button id="backToTop" class="fixed bottom-6 right-6 bg-blue-600 text-white p-3 rounded-full shadow-lg hover:bg-blue-700 transition opacity-0 hidden">
+        <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18" />
+        </svg>
+    </button>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white text-center p-6">
+        <p>© 2025 Amazon Product Hunting. All rights reserved.</p>
+    </footer>
+
+    <script>
+        const landingSection = document.getElementById('landingSection');
+        const productSection = document.getElementById('productSection');
+        const productDetailSection = document.getElementById('productDetailSection');
+        const productDetailContent = document.getElementById('productDetailContent');
+        const startSearching = document.getElementById('startSearching');
+        const searchInput = document.getElementById('searchInput');
+        const clearSearch = document.getElementById('clearSearch');
+        const sortSelect = document.getElementById('sortSelect');
+        const availabilityFilter = document.getElementById('availabilityFilter');
+        const productContainer = document.getElementById('productContainer');
+        const loadingSpinner = document.getElementById('loadingSpinner');
+        const paginationContainer = document.getElementById('pagination');
+        const backToTop = document.getElementById('backToTop');
+        const menuToggle = document.getElementById('menuToggle');
+        const mobileMenu = document.getElementById('mobileMenu');
+
+
+    
+        let products = [];
+        let searchTerm = '';
+        let sortOption = 'none';
+        let availability = 'all';
+        let currentPage = 1;
+        const productsPerPage = 40;
+        const maxPageButtons = 5;
+
+        function goToLanding() {
+            landingSection.classList.remove('hidden');
+            productSection.classList.add('hidden');
+            productDetailSection.classList.add('hidden');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+    
+        function debounce(func, wait) {
+            let timeout;
+            return function (...args) {
+                clearTimeout(timeout);
+                timeout = setTimeout(() => func.apply(this, args), wait);
+            };
+        }
+    
+        function showSkeletonLoaders(count = productsPerPage) {
+            productContainer.innerHTML = '';
+            const skeleton = document.querySelector('[data-skeleton]');
+            if (!skeleton) {
+                productContainer.innerHTML = '<p class="text-center text-red-500">Skeleton loader not found.</p>';
+                return;
+            }
+            for (let i = 0; i < count; i++) {
+                const clone = skeleton.cloneNode(true);
+                clone.classList.remove('hidden');
+                productContainer.appendChild(clone);
+            }
+        }
+    
+        function renderProducts(productsToShow, page = 1) {
+            productContainer.innerHTML = '';
+            if (productsToShow.length === 0) {
+                productContainer.innerHTML = '<p class="text-center text-gray-500">No products found.</p>';
+                renderPagination(0);
+                return;
+            }
+    
+            const start = (page - 1) * productsPerPage;
+            const end = start + productsPerPage;
+            const paginatedProducts = productsToShow.slice(start, end);
+    
+            paginatedProducts.forEach(product => {
+                const productCard = `
+                    <div class="bg-white rounded-lg shadow p-4">
+                        <img src="${product.image}" alt="${product.title}" class="w-full h-48 object-contain bg-gray-50 mb-2" onerror="this.src='https://via.placeholder.com/150?text=No+Image'">
+                        <h2 class="text-lg font-semibold">${product.title}</h2>
+                        <p class="text-gray-700 mt-1">Price: $${product.price.toFixed(2)}</p>
+                        <p class="text-gray-700">Rating: ${product.rating}</p>
+                        <p class="text-gray-700">Reviews: ${product.reviews}</p>
+                        <p class="text-${product.availability === 'In Stock' ? 'green' : 'red'}-600">${product.availability}</p>
+                        <button onclick="showProductDetail('${product.asin}')" class="mt-3 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">View Details</button>
+                    </div>`;
+                productContainer.innerHTML += productCard;
+            });
+    
+            renderPagination(productsToShow.length);
+        }
+    
+        function renderPagination(totalProducts) {
+            paginationContainer.innerHTML = '';
+            const totalPages = Math.ceil(totalProducts / productsPerPage);
+            if (totalPages <= 1) return;
+    
+            const createButton = (text, disabled, handler) => {
+                const btn = document.createElement('button');
+                btn.textContent = text;
+                btn.className = `px-4 py-2 mx-1 rounded ${disabled ? 'bg-gray-300 text-gray-500 cursor-not-allowed' : 'bg-gray-200 hover:bg-gray-300'}`;
+                btn.disabled = disabled;
+                btn.addEventListener('click', handler);
+                return btn;
+            };
+    
+            paginationContainer.appendChild(createButton('Prev', currentPage === 1, () => {
+                currentPage--;
+                updateProducts();
+            }));
+    
+            const startPage = Math.max(1, currentPage - Math.floor(maxPageButtons / 2));
+            const endPage = Math.min(totalPages, startPage + maxPageButtons - 1);
+    
+            for (let i = startPage; i <= endPage; i++) {
+                const btn = createButton(i, false, () => {
+                    currentPage = i;
+                    updateProducts();
+                });
+                if (i === currentPage) btn.classList.add('bg-blue-600', 'text-white');
+                paginationContainer.appendChild(btn);
+            }
+    
+            paginationContainer.appendChild(createButton('Next', currentPage === totalPages, () => {
+                currentPage++;
+                updateProducts();
+            }));
+        }
+    
+        function applyFiltersAndSort(products, searchTerm, sortOption, availability) {
+            let filtered = products.filter(p =>
+                p.title.toLowerCase().includes(searchTerm.toLowerCase())
+            );
+    
+            if (availability === 'in-stock') {
+                filtered = filtered.filter(p => p.availability === 'In Stock');
+            } else if (availability === 'out-of-stock') {
+                filtered = filtered.filter(p => p.availability !== 'In Stock');
+            }
+    
+            if (sortOption === 'price-asc') {
+                filtered.sort((a, b) => a.price - b.price);
+            } else if (sortOption === 'price-desc') {
+                filtered.sort((a, b) => b.price - a.price);
+            } else if (sortOption === 'rating-desc') {
+                filtered.sort((a, b) => parseFloat(b.rating) - parseFloat(a.rating));
+            }
+    
+            return filtered;
+        }
+    
+        const updateProducts = debounce(() => {
+            loadingSpinner.classList.remove('hidden');
+            const filtered = applyFiltersAndSort(products, searchTerm, sortOption, availability);
+            renderProducts(filtered, currentPage);
+            loadingSpinner.classList.add('hidden');
+        }, 300);
+    
+        function fetchData() {
+            showSkeletonLoaders();
+            // REMOVE cached data to always load new (you can toggle this based on user input)
+            localStorage.removeItem('amazonProducts');
+    
+            const cached = localStorage.getItem('amazonProducts');
+            if (cached) {
+                products = JSON.parse(cached);
+                renderProducts(products);
+                return;
+            }
+    
+            fetch('./amazon_with_matches.json')
+                .then(res => res.json())
+                .then(data => {
+                    products = data;
+                    localStorage.setItem('amazonProducts', JSON.stringify(data));
+                    renderProducts(products);
+                })
+                .catch(err => {
+                    productContainer.innerHTML = `<p class="text-red-500">Failed to load: ${err.message}</p>`;
+                });
+        }
+    
+        function showProductDetail(asin) {
+            const product = products.find(p => p.asin === asin);
+            if (!product) return;
+    
+            productSection.classList.add('hidden');
+            productDetailSection.classList.remove('hidden');
+    
+            const walmartHTML = product.walmart_match ? `
+                <div class="mt-4 border p-4 rounded">
+                    <h3 class="font-semibold text-green-600">Walmart Match</h3>
+                    <p>${product.walmart_match.title}</p>
+                    <p>Price: $${product.walmart_match.price}</p>
+                    <a href="${product.walmart_match.link}" class="text-blue-600 underline" target="_blank">View on Walmart</a>
+                </div>` : `<p class="mt-4 text-gray-500 italic">No matching Walmart product found.</p>`;
+    
+            productDetailContent.innerHTML = `
+                <h1 class="text-2xl font-bold mb-2">${product.title}</h1>
+                <img src="${product.image}" class="w-full max-h-80 object-contain bg-gray-100 mb-4" alt="">
+                <p><strong>Price:</strong> $${product.price}</p>
+                <p><strong>Rating:</strong> ${product.rating}</p>
+                <p><strong>Reviews:</strong> ${product.reviews}</p>
+                <p><strong>Availability:</strong> ${product.availability}</p>
+                <p><strong>ASIN:</strong> ${product.asin}</p>
+                <a href="https://www.amazon.com/dp/${product.asin}" target="_blank" class="text-blue-700 underline block mt-2">View on Amazon</a>
+                ${walmartHTML}`;
+        }
+    
+        document.getElementById('backToResults').addEventListener('click', () => {
+            productDetailSection.classList.add('hidden');
+            productSection.classList.remove('hidden');
+        });
+    
+        function setupEventListeners() {
+            startSearching.addEventListener('click', () => {
+                landingSection.classList.add('hidden');
+                productSection.classList.remove('hidden');
+                fetchData();
+            });
+    
+            searchInput.addEventListener('input', (e) => {
+                searchTerm = e.target.value;
+                currentPage = 1;
+                clearSearch.classList.toggle('hidden', !searchTerm);
+                updateProducts();
+            });
+    
+            clearSearch.addEventListener('click', () => {
+                searchInput.value = '';
+                searchTerm = '';
+                currentPage = 1;
+                clearSearch.classList.add('hidden');
+                updateProducts();
+            });
+    
+            sortSelect.addEventListener('change', e => {
+                sortOption = e.target.value;
+                updateProducts();
+            });
+    
+            availabilityFilter.addEventListener('change', e => {
+                availability = e.target.value;
+                updateProducts();
+            });
+    
+            menuToggle.addEventListener('click', () => {
+                mobileMenu.classList.toggle('hidden');
+            });
+    
+            window.addEventListener('scroll', () => {
+                backToTop.classList.toggle('hidden', window.scrollY < 300);
+            });
+    
+            backToTop.addEventListener('click', () => {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            });
+        }
+    
+        setupEventListeners();
+    </script>
+    
+</body>
+</html>
